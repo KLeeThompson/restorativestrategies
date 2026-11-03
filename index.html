@@ -1,0 +1,1148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Behavior Scenarios Notebook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Arimo:wght@400;700&display=swap">
+<style>
+/* Layout: a spiral notebook on a desk. The cover is the intro, each screen is a page that flips around the spiral, the back cover holds the teacher's copy. Single deliberate light look, like a laminated classroom notebook. */
+:root{
+  --desk:#CDAA80; --cover:#F6E84E; --aqua:#A7DAD7; --aqua-deep:#4FA6A1;
+  --paper:#FFFFFF; --rule:rgba(79,166,161,.22); --ink:#151515; --soft:#4A4A4A;
+  --font:"Arimo",Arial,"Helvetica Neue",Helvetica,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{background:var(--desk) repeating-linear-gradient(178deg,rgba(90,55,25,.06) 0 3px,transparent 3px 11px,rgba(255,255,255,.05) 11px 13px,transparent 13px 26px);color:var(--ink);font-family:var(--font);font-size:17px;line-height:1.55;min-height:100%}
+.wrap{max-width:760px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 72px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.series{margin:0;font-weight:700;font-size:15px}
+.ghost{font:inherit;font-size:14px;font-weight:700;background:var(--paper);border:2px solid var(--ink);color:var(--ink);border-radius:6px;padding:5px 12px;cursor:pointer;box-shadow:2px 2px 0 var(--ink)}
+.track{list-style:none;margin:16px 0 0;padding:0;display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.track[hidden],[hidden]{display:none!important}
+.track li{display:flex;flex-direction:column;gap:5px;min-width:0}
+.track .bar{height:12px;border-radius:6px;border:2px solid var(--ink);background:var(--paper)}
+.track li.done .bar{background:var(--aqua-deep)}
+.track li.now .bar{background:var(--ink)}
+.track .lab{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:560px){.track li:not(.now) .lab{visibility:hidden}.track li.now .lab{overflow:visible}}
+
+/* notebook */
+.stage{position:relative;margin-top:18px;perspective:2200px}
+.page{position:relative;border:3px solid var(--ink);border-radius:8px 14px 14px 8px;padding:30px clamp(18px,5vw,44px) 26px clamp(46px,8vw,64px);
+  background:var(--paper) repeating-linear-gradient(to bottom,transparent 0 33px,var(--rule) 33px 35px);
+  box-shadow:5px 5px 0 -1px var(--paper),5px 5px 0 1px var(--ink),10px 10px 0 -1px var(--paper),10px 10px 0 1px var(--ink);
+  transform-origin:left center;backface-visibility:hidden}
+.page.cover{background:var(--cover)}
+.page.back-cover{background:var(--aqua)}
+.page::before{content:"";position:absolute;left:-16px;top:16px;bottom:16px;width:44px;pointer-events:none;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='24'%3E%3Ccircle cx='33' cy='12' r='3.6' fill='%23151515'/%3E%3Cpath d='M33 9.5C24 1 7 1.5 5 9c-1.6 6 6 9.5 13 8.5' fill='none' stroke='%237d7d7d' stroke-width='3.4' stroke-linecap='round'/%3E%3Cpath d='M33 9.5C24 1 7 1.5 5 9' fill='none' stroke='%23d6d6d6' stroke-width='1.2' stroke-linecap='round'/%3E%3C/svg%3E") repeat-y 0 0/44px 24px}
+.page.turn-out{position:absolute;inset:0 0 auto 0;z-index:3;pointer-events:none;animation:out .6s cubic-bezier(.4,.1,.6,1) forwards}
+.page.turn-in{z-index:3;animation:in .6s cubic-bezier(.4,.1,.6,1)}
+@keyframes out{0%{transform:rotateY(0)}100%{transform:rotateY(-100deg);opacity:.15}}
+@keyframes in{0%{transform:rotateY(-100deg);opacity:.15}100%{transform:rotateY(0)}}
+@media (prefers-reduced-motion:reduce){.page.turn-out{display:none}.page.turn-in{animation:none}}
+.pageno{position:absolute;right:16px;bottom:10px;font-size:13px;font-weight:700;color:var(--soft)}
+
+.stack{display:flex;flex-direction:column;gap:14px}
+.stack > *{margin:0}
+.kicker{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;text-align:center}
+.burst{position:relative;align-self:center;width:min(100%,560px);padding:clamp(36px,8vw,54px) clamp(40px,11vw,78px);text-align:center}
+.burst svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.burst h1{position:relative;margin:0;font-size:clamp(27px,5.6vw,40px);line-height:1.12;font-weight:700;text-wrap:balance;outline:none}
+h2{font-size:21px;line-height:1.25;font-weight:700;text-wrap:balance}
+.sub{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-top:4px}
+.lede{font-size:19px}
+.status{display:flex;flex-wrap:wrap;gap:6px}
+.status span{font-size:13px;font-weight:700;border:2px solid var(--ink);border-radius:999px;padding:2px 10px;background:var(--paper)}
+.status span:first-child{background:var(--aqua)}
+.chat{display:flex;flex-direction:column;gap:10px}
+.msg{align-self:flex-start;max-width:90%;background:var(--paper);border:2.5px solid var(--ink);border-radius:16px 16px 16px 4px;padding:6px 14px 8px;box-shadow:3px 3px 0 var(--ink)}
+.msg b{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--soft)}
+.msg span{font-size:17px}
+.credit-lead{font-weight:700}
+.think{position:relative;background:var(--cover);border:3px solid var(--ink);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:10px;margin-top:10px;box-shadow:4px 4px 0 var(--ink)}
+.think::after{content:"";position:absolute;left:34px;bottom:-17px;width:24px;height:24px;background:var(--cover);border-right:3px solid var(--ink);border-bottom:3px solid var(--ink);transform:skewX(30deg) rotate(45deg) scaleY(.6)}
+.think .lab{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.think p{margin:0;font-weight:700;font-size:19px;line-height:1.3}
+.ask{margin-top:14px}
+.choices{display:grid;gap:12px}
+.choice{font:inherit;text-align:left;color:var(--ink);background:var(--paper);border:3px solid var(--ink);border-radius:8px;padding:12px 16px;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:start;cursor:pointer;box-shadow:4px 4px 0 var(--ink);transition:transform .08s,box-shadow .08s}
+.choice:hover{background:#FFFBD6}
+.choice:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
+.choice[aria-pressed="true"]{background:var(--aqua)}
+.key{font-size:14px;font-weight:700;min-width:30px;height:30px;padding:0 4px;border-radius:15px;background:var(--ink);color:var(--paper);display:grid;place-items:center}
+label.q{display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:16px}
+label.q .opt{font-weight:400;color:var(--soft);font-size:14px}
+textarea,input[type=text]{font:inherit;font-size:16px;color:var(--ink);background:var(--paper);border:2px solid var(--ink);border-radius:6px;padding:10px 12px;width:100%}
+textarea{min-height:84px;resize:vertical}
+:focus-visible{outline:3px solid var(--aqua-deep);outline-offset:2px}
+.actions{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:28px;flex-wrap:wrap}
+.btn{font:inherit;font-weight:700;font-size:17px;background:var(--ink);color:var(--cover);border:3px solid var(--ink);border-radius:8px;padding:11px 22px;cursor:pointer;margin-left:auto;box-shadow:3px 3px 0 var(--aqua-deep)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.back{font:inherit;font-weight:700;background:none;border:0;color:var(--ink);cursor:pointer;padding:8px 0;text-decoration:underline;text-underline-offset:3px}
+ul.plain{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
+.how{margin:0;padding:0;list-style:none;display:grid;gap:12px}
+.how li{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:baseline}
+.cover-sub{text-align:center;font-weight:700;font-size:20px}
+.cover-name{text-align:right;font-weight:700;font-size:clamp(26px,5vw,34px);min-height:1.3em;margin-top:6px}
+.path{background:var(--paper);border:3px solid var(--ink);border-radius:10px;padding:14px 18px;display:flex;flex-direction:column;gap:8px}
+.path p{margin:0}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:16px;background:var(--paper);border:3px solid var(--ink)}
+th,td{text-align:left;padding:10px 12px;border-bottom:2px solid var(--ink);vertical-align:top}
+th{font-size:13px;text-transform:uppercase;letter-spacing:.05em;background:var(--aqua)}
+tr.mine td{background:var(--cover)}
+.pill{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;background:var(--ink);color:var(--cover);border-radius:999px;padding:2px 8px;margin-left:6px;vertical-align:2px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.tile{background:var(--paper);border:3px solid var(--ink);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.tile h3{margin:0;font-size:15px;text-transform:uppercase;letter-spacing:.05em;align-self:flex-start;background:var(--cover);border:2px solid var(--ink);border-radius:6px;padding:1px 8px}
+.tile ul{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:4px;font-size:16px}
+.note{background:var(--paper);border:2px dashed var(--ink);border-radius:10px;padding:12px 16px;font-size:16px}
+.checks{display:grid;gap:8px}
+.checks label{display:flex;gap:10px;align-items:flex-start;font-size:16px;cursor:pointer}
+.checks input{width:20px;height:20px;margin-top:2px;accent-color:var(--ink);flex:none}
+.copy{display:flex;flex-direction:column;gap:14px}
+.copy section{background:var(--paper);border:2px solid var(--ink);border-radius:10px;padding:12px 16px;display:flex;flex-direction:column;gap:6px}
+.copy h3{margin:0;font-size:14px;text-transform:uppercase;letter-spacing:.05em}
+.copy p{margin:0}
+.copy .a{color:var(--soft);font-size:15px}
+.copy .a b{color:var(--ink)}
+.copyrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.copyrow .btn{margin-left:0}
+.toast{font-size:15px;font-weight:700}
+#fallback{min-height:200px;font-size:13px}
+</style>
+<style>
+.page.divider{background:#D3EEEC repeating-linear-gradient(to bottom,transparent 0 33px,var(--rule) 33px 35px)}
+.center{text-align:center}
+.setting{align-self:center;font-size:14px;font-weight:700;border:2px solid var(--ink);border-radius:999px;padding:3px 14px;background:var(--paper)}
+.copy .scen{margin:10px 0 0;font-size:20px;font-weight:700;border-bottom:3px solid var(--ink);padding-bottom:4px}
+</style>
+
+<style>html,body{margin:0}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <p class="series" id="series"></p>
+    <button class="ghost" id="restart" type="button">Start over</button>
+  </header>
+  <ol class="track" id="track" aria-label="Progress"></ol>
+  <div class="stage" id="stage">
+    <main class="page" id="screen" aria-live="polite"></main>
+  </div>
+</div>
+
+<script>
+// ---- Scenarios. Add Scenario 3 and 4 to this list; the notebook builds the rest. ----
+const SCENARIOS = [
+{
+  id: "s1", name: "The VR Science Lab", student: "Jordan", setting: "VR",
+  status: ["VR · Science lab", "10:15 AM", "18 students", "5 min of directions left"],
+  facts: [
+    "Jordan reads about two grade levels below the level of the lab instructions.",
+    "The instructions were a full page of text.",
+    "Jordan's behavior spikes whenever a task requires independent reading, usually within the first few minutes.",
+    "Jordan's IEP includes read-aloud and chunked directions as accommodations."
+  ],
+  lede: "The behavior was most likely about <strong>escape</strong>: getting away from a task that felt too hard, without anyone finding out it felt too hard. Being the class clown can feel safer than being the kid who can't read the instructions.",
+  summaryLine: "Jordan's behavior was most likely about escape: avoiding reading that felt too hard.",
+  outcomes: [
+    ["outRem", "Jordan was removed", "Exactly the escape they wanted"],
+    ["outEsc", "Things escalated", "Ten minutes away from the reading, plus an audience"],
+    ["outQuiet", "The room went quiet", "The behavior stopped, but the reading was still avoided"],
+    ["found", "You found the reason", "The real reason, and a way back into the work"]
+  ],
+  firstNotes: {
+    A: "Muting stopped the noise, but the reason behind it was still there.",
+    B: "Correcting Jordan in front of classmates gave them an audience right when they wanted to avoid the work.",
+    C: "The timekeeper job is a strong strategy for attention-seeking. Here it gave Jordan a reason to skip the reading.",
+    D: "Your private message gave Jordan a safe way to tell you what was wrong."
+  },
+  tiles: [
+    ["Prevent", [
+      "Check IEPs and 504s for reading accommodations before reading-heavy activities.",
+      "Break directions into short steps.",
+      "Turn on read-aloud for everyone, so no one is singled out.",
+      "Pre-correct before the reading starts."]],
+    ["Respond", [
+      "Check in privately before correcting publicly.",
+      "Offer two acceptable choices.",
+      "Give a role that includes the task, not one that replaces it."]],
+    ["Reinforce", [
+      "Use specific praise when Jordan engages: “You finished step 1. That was a lot of reading.”"]]
+  ],
+  note: "<strong>When removal is the right call.</strong> Safety concerns, harassment, or a class that can't continue may require removal. Follow school policy. When behavior is about escape, though, removal often makes it more likely next time, so pair it with a plan for the task itself.",
+  supports: [
+    "Check Jordan's IEP for reading accommodations before reading-heavy labs",
+    "Break the lab instructions into short steps",
+    "Turn on read-aloud for the whole class",
+    "Pre-correct: “If the reading feels long, here's what you can do…”",
+    "Pair Jordan with a partner reader",
+    "Check in privately at the start of reading tasks",
+    "Praise specific effort: “You finished step 1. That was a lot of reading.”"
+  ],
+  reflectQ: "Think of a student whose behavior tends to show up at the same point in a lesson. What happens right before? (Use initials or a description only.)",
+  screens: {
+    scenario: {
+      body: [
+        "It's 10:15, and you're in VR with 18 students for a science lab. You're walking the class through the lab steps, which are posted on a board in the room. Next, groups will read the full instructions and do the lab together.",
+        "Jordan keeps teleporting into other groups' spaces and laughing into the mic. Two students type in chat:"
+      ],
+      chat: [["Maya", "Jordan stop"], ["Luis", "I can't hear"]],
+      after: ["You've already given a whole-class reminder: “Stay with your group, please.” You have five minutes of directions left."],
+      choices: [
+        ["A", "Mute Jordan and keep teaching. You'll deal with it after class.", "fbA"],
+        ["B", "Say aloud: “Jordan, I've already asked once. Go back to your group, please.”", "fbB"],
+        ["C", "Make Jordan the timekeeper for their group so they have something to do.", "fbC"],
+        ["D", "Send Jordan a private message: “I want you with us. Can you head back to your group? Do you need help getting started?”", "fbD"]
+      ]
+    },
+    fbA: {
+      summary: "After muting Jordan", kicker: "You muted Jordan", title: "Fair call.",
+      creditText: "Muting is fast and protects everyone else's ability to hear. Sometimes it's exactly the right first move.",
+      happens: ["The noise stops. A minute later, Jordan types in chat:"],
+      chat: [["Jordan", "this is so boring lol"]],
+      after: ["Their avatar starts circling the board where the lab steps are posted. A few students send laughing emojis."],
+      think: "Muting stopped the sound. What didn't it stop? What might Jordan be trying to get, or get away from?",
+      choices: [
+        ["A1", "Remove Jordan from the session.", "outRem"],
+        ["A2", "Turn off chat for the whole class.", "outEsc"],
+        ["A3", "Send Jordan a private message to check in.", "outCon"]
+      ]
+    },
+    fbB: {
+      summary: "After correcting Jordan out loud", kicker: "You corrected Jordan out loud", title: "Fair call.",
+      creditText: "You restated the expectation clearly and calmly. Many teachers would do the same.",
+      happens: ["Jordan says into the mic:"],
+      chat: [["Jordan", "Why are you always calling me out? Other people are moving too."]],
+      after: ["The room goes quiet. Everyone is waiting to see what you'll do."],
+      think: "What does Jordan get out of this moment in front of classmates? What's at stake for you?",
+      choices: [
+        ["B1", "“Back to your group now, or you'll be removed.”", "outRem"],
+        ["B2", "“Let's talk in a minute,” then keep teaching and message Jordan privately.", "outCon"],
+        ["B3", "Explain why you called Jordan out and that the others aren't teleporting.", "outEsc"]
+      ]
+    },
+    fbC: {
+      summary: "After giving Jordan a job", kicker: "You gave Jordan a job", title: "Good instinct.",
+      creditText: "A role is a strong positive strategy, especially for students who want attention or need to move.",
+      happens: ["Jordan likes it, for about two minutes. As soon as the group starts reading the lab instructions, Jordan announces into the mic:"],
+      chat: [["Jordan", "TIME'S UP, GUYS!"]],
+      after: ["Then Jordan teleports to another group."],
+      think: "Look at when the behavior came back. What changed at that moment?",
+      choices: [
+        ["C1", "Take the job away and give Jordan a warning.", "outEsc"],
+        ["C2", "Remove Jordan from the session.", "outRem"],
+        ["C3", "Send Jordan a private message to check in.", "outCon"]
+      ]
+    },
+    fbD: {
+      summary: "After messaging Jordan privately", kicker: "You messaged Jordan privately", title: "Strong choice.",
+      creditText: "A private redirect protects Jordan's dignity and takes away the audience. It also takes more time in the moment, which isn't easy with 17 other students waiting.",
+      happens: ["Jordan stops teleporting and replies:"],
+      chat: [["Jordan", "this is dumb. the reading is SO long"]],
+      think: "Jordan just told you something. What might it mean?",
+      choices: [
+        ["D1", "“I know, but everyone has to do it. Just try your best.”", "outQuiet"],
+        ["D2", "“Thanks for telling me. Want to read it with a partner, or should I turn on read-aloud?”", "reveal"],
+        ["D3", "“Let's talk after class. For now, please go back to your group.”", "outQuiet"]
+      ]
+    },
+    outRem: {
+      title: "Jordan is removed",
+      body: ["Jordan leaves the session. The room calms down, and you finish the directions.", "Jordan misses the entire lab. Next week, during another reading-heavy lab, the same behavior starts within the first five minutes."],
+      think: "Removal ended the disruption. What did it give Jordan? Why might the behavior come back sooner next time?",
+      opens: [["open", "What would you want to know about Jordan before the next lab?"]]
+    },
+    outEsc: {
+      title: "Things escalate",
+      body: ["Things get bigger instead of calmer. Jordan pushes back, classmates start reacting, and the room's attention is now on Jordan instead of the lab.", "Ten minutes in, no group has started reading the instructions."],
+      think: "Moments like this can become a contest nobody wins. What made this one grow? What might have helped it calm down?"
+    },
+    outQuiet: {
+      title: "The room goes quiet",
+      body: ["Jordan goes back to the group, and the disruption stops. But Jordan's avatar stays parked in a corner.", "When you check the group's work later, Jordan hasn't contributed anything. Their lab sheet is blank."],
+      think: "Quiet isn't the same as learning. What did Jordan still manage to avoid today?"
+    },
+    outCon: {
+      title: "You check in",
+      body: ["You message Jordan: “Hey, what's going on?” After a pause, Jordan writes:"],
+      chat: [["Jordan", "idk. the reading is too long. i don't get it"]],
+      think: "Jordan just gave you an important clue. How does it change what you think the behavior was about?"
+    }
+  }
+},
+{
+  id: "s2", name: "The Teams Discussion", student: "Avery", setting: "Teams",
+  teaser: "This time you're in Teams, leading a whole-class discussion. Watch for what's different.",
+  status: ["Teams · ELA discussion", "1:40 PM", "22 students", "10 min of discussion left"],
+  facts: [
+    "Avery joined your virtual school six weeks ago and hasn't made friends in class yet.",
+    "Avery is home alone for most of the school day.",
+    "The behavior happens most during whole-class discussion, when other students have the spotlight. It almost never happens in small breakout rooms where Avery has a job.",
+    "When Avery jokes, classmates laugh and react. That's most of the social contact Avery gets all day."
+  ],
+  lede: "The behavior was most likely about <strong>attention</strong>: mostly classmates' attention, and wanting to connect. Being funny is the fastest way Avery knows to get noticed.",
+  twist: "Here's the twist from Scenario 1: the job that backfired with Jordan works for Avery. Same strategy, different reason for the behavior.",
+  summaryLine: "Avery's behavior was most likely about attention: mostly classmates' attention, and wanting to connect.",
+  outcomes: [
+    ["outRem", "Avery went to the lobby", "A bigger audience: the chat lit up the moment Avery left"],
+    ["outEsc", "The show got bigger", "More attention every time someone reacted"],
+    ["outQuiet", "Classmates went quiet", "The spotlight, at the cost of classmates' willingness to share"],
+    ["found", "Avery got a positive spotlight", "Attention for contributing instead of disrupting"]
+  ],
+  firstNotes: {
+    A: "Muting moved the behavior into chat, where classmates kept the show going.",
+    B: "Correcting Avery in front of everyone gave Avery the spotlight they were after.",
+    C: "Ignoring works when a student wants your attention. Avery wanted classmates' attention, and they kept giving it.",
+    D: "A role gave Avery attention for something useful. That fits what Avery needed."
+  },
+  tiles: [
+    ["Prevent", [
+      "Build connection with the 2x10 strategy: 2 minutes of non-school conversation for 10 days in a row.",
+      "Give roles before the discussion starts, not after a problem.",
+      "Use structured turn-taking with the raise-hand feature.",
+      "Use small breakout groups so every student gets more airtime."]],
+    ["Respond", [
+      "Keep corrections short and private, so the disruption gets as little attention as possible.",
+      "Redirect the energy into a role.",
+      "Notice and name it when classmates stay focused on the speaker."]],
+    ["Reinforce", [
+      "Give attention the moment Avery contributes: “Your question got three people talking.”",
+      "Plan an appropriate spotlight, like a joke of the day to close class."]]
+  ],
+  note: "<strong>When ignoring works, and when it doesn't.</strong> Planned ignoring works when you control the attention the student wants. When classmates are the audience, ignoring alone usually makes the behavior louder before it gets quieter. Pair it with a positive way to get attention.",
+  supports: [
+    "Use the 2x10 strategy to build a relationship with Avery",
+    "Give Avery a planned role before the discussion starts",
+    "Use structured turn-taking with the raise-hand feature",
+    "Plan a short, appropriate spotlight, like a joke to close class",
+    "Keep corrections short and private",
+    "Praise specific contributions: “Your question got three people talking.”",
+    "Use small breakout groups so Avery has more airtime and connection"
+  ],
+  reflectQ: "Think of a student who seems to want an audience. Whose attention are they after: yours, or their classmates'? (Use initials or a description only.)",
+  screens: {
+    scenario: {
+      body: [
+        "It's 1:40, and you're leading a whole-class discussion in Teams about a short story. Students use the raise-hand feature, and you call on them to share.",
+        "This is the third time today Avery has unmuted without being called on. While Kayla is sharing her answer, Avery cuts in:"
+      ],
+      chat: [["Avery · mic", "Wait wait wait. Plot twist: nobody actually read it."], ["Chat", "😂😂😂"], ["Marcus", "LMAO avery"]],
+      after: ["Kayla stops talking. You've already reminded the class: “Please raise your hand and wait to be called on.” There are ten minutes left in the discussion."],
+      choices: [
+        ["A", "Mute Avery and keep the discussion going.", "fbA"],
+        ["B", "Say to the class: “Avery, that's the third time. Mute yourself and let Kayla finish.”", "fbB"],
+        ["C", "Ignore it. Thank Kayla, and praise students who are raising their hands.", "fbC"],
+        ["D", "Give Avery a role: “Avery, I need a discussion leader. Can you call on the next three people with raised hands?”", "fbD"]
+      ]
+    },
+    fbA: {
+      summary: "After muting Avery", kicker: "You muted Avery", title: "Fair call.",
+      creditText: "Muting protects Kayla's turn and keeps the discussion moving. Sometimes it's the right first step.",
+      happens: ["Avery can't unmute, so the jokes move to chat:"],
+      chat: [["Avery", "free me 😭😭"], ["Marcus", "FREE AVERY"], ["Chat", "😂 😂 😂"]],
+      after: ["Half the class is now watching the chat instead of the discussion."],
+      think: "Muting moved the behavior. Where did it go, and who is keeping it going?",
+      choices: [
+        ["A1", "Turn off chat for the whole class.", "outEsc"],
+        ["A2", "Move Avery to the lobby.", "outRem"],
+        ["A3", "Send Avery a private message: “I'd like to hear your ideas. Want to share the next answer?”", "outCon"]
+      ]
+    },
+    fbB: {
+      summary: "After correcting Avery in front of the class", kicker: "You corrected Avery in front of the class", title: "Fair call.",
+      creditText: "You named the problem and the expectation. Many teachers would do the same.",
+      happens: ["Avery unmutes:"],
+      chat: [["Avery · mic", "My bad, my bad 🙏 Continue, your honor."]],
+      after: ["The class laughs. Two minutes later, Avery does it again."],
+      think: "Who got the most attention in the last two minutes?",
+      choices: [
+        ["B1", "“That's your last warning. Next time, you're going to the lobby.”", "outRem"],
+        ["B2", "Move on, then send Avery a private message after the next student shares.", "outCon"],
+        ["B3", "Correct Avery each time it happens, so the class sees you mean it.", "outEsc"]
+      ]
+    },
+    fbC: {
+      summary: "After ignoring it and praising others", kicker: "You ignored it and praised others", title: "Fair call.",
+      creditText: "Planned ignoring paired with praise for students who are on track is a real strategy. It often works when a student wants your attention.",
+      happens: ["You say, “Thanks, Kayla. Can you finish your thought?” and thank two students for raising their hands. Avery unmutes again, louder:"],
+      chat: [["Avery · mic", "KAYLA IS THE TEACHER'S PET 😂"]],
+      after: ["A few students laugh, and laughing emojis fill the chat. Kayla doesn't finish her thought."],
+      think: "Ignoring works when you control the attention. Whose attention is Avery after?",
+      choices: [
+        ["C1", "Keep ignoring it. It'll burn out if you don't react.", "outEsc"],
+        ["C2", "Move Avery to the lobby.", "outRem"],
+        ["C3", "Send Avery a private message and offer them a role in the discussion.", "outCon"]
+      ]
+    },
+    fbD: {
+      summary: "After giving Avery a role", kicker: "You gave Avery a role", title: "Good instinct.",
+      creditText: "A role gives a student attention for something useful. It works best when attention is what they're after.",
+      happens: ["Avery takes the job and runs with it, calling on classmates in a game-show voice:"],
+      chat: [["Avery · mic", "Next contestant: Marcus! Come on down!"]],
+      after: ["Classmates laugh, but they're also answering. Then, after Kayla shares, Avery adds: “Ehh, that answer was kind of mid.”"],
+      think: "The role is mostly working. What does Avery need from you right now?",
+      choices: [
+        ["D1", "Take the role back: “If you can't be respectful, I'll call on people myself.”", "outEsc"],
+        ["D2", "Private message: “You're a great discussion leader. Keep the energy, but no jokes about anyone's answers. Deal?”", "reveal"],
+        ["D3", "Let it go. The discussion is finally moving.", "outQuiet"]
+      ]
+    },
+    outRem: {
+      title: "Avery goes to the lobby",
+      body: ["You move Avery to the lobby. The chat lights up:"],
+      chat: [["Marcus", "RIP Avery 💀"], ["Chat", "😂 😂"]],
+      after: ["It takes two minutes to get the discussion back. The next day, classmates are still talking about it, and Avery starts joking in the first ten minutes of class."],
+      think: "Removal took Avery out of the room. Did it take away the attention?",
+      opens: [["open", "What would you want to know about Avery before the next discussion?"]]
+    },
+    outEsc: {
+      title: "The show gets bigger",
+      body: ["Every reaction makes the behavior bigger. Classmates are watching Avery, not the discussion.", "By the end of class, only four students have shared."],
+      think: "Avery's behavior was getting something every time. What was it, and who was giving it?"
+    },
+    outQuiet: {
+      title: "Classmates go quiet",
+      body: ["The discussion keeps moving, and Avery stays in the spotlight.", "But Kayla doesn't raise her hand again. Two other students who usually share stay quiet for the rest of class."],
+      think: "When classmates are the audience, who pays the price? What did the other students learn about sharing in this class?"
+    },
+    outCon: {
+      title: "Avery joins in",
+      body: ["You message Avery privately. A minute later, Avery raises their hand and shares a real answer, and it's a good point. You say, “That's a sharp idea, Avery. Who can build on it?”", "Avery stays focused for the rest of the discussion. After class, Avery messages you:"],
+      chat: [["Avery", "can i be the one who calls on people next time"]],
+      think: "What does this message tell you about what Avery was after all along?"
+    }
+  }
+},
+{
+  id: "s3", name: "The Perfect Paragraph", student: "Taylor", setting: "Teams",
+  teaser: "This one isn't about a disruption in class. It's about AI, a tool your school wants students to use well.",
+  status: ["Teams · Assignments", "ELA · Argument paragraph", "Submitted 11:40 PM", "No prompts cited"],
+  facts: [
+    "Taylor is missing four other assignments across three classes.",
+    "Taylor's last two writing grades were Ds, with comments like “needs more development.”",
+    "Taylor makes strong points in class discussions. Writing is where Taylor gets stuck.",
+    "Nobody had shown Taylor what a helpful prompt looks like. Taylor thought using AI meant asking it for the answer."
+  ],
+  lede: "The AI shortcut was most likely about <strong>escape</strong>: getting away from a task that felt impossible, while behind and afraid of failing again. Taylor didn't know AI could help them get started instead of doing the work for them.",
+  twist: "Like Jordan in Scenario 1, Taylor was escaping a hard task. Online, escape doesn't always look like disruption. Sometimes it looks like a perfect paragraph.",
+  summaryLine: "Taylor's AI shortcut was most likely about escape, plus a skill gap: Taylor didn't know how to use AI to help instead of to replace their thinking.",
+  outcomes: [
+    ["outRem", "Taylor checked out", "An escape from writing altogether"],
+    ["outEsc", "It turned into a contest", "A reason to hide AI use instead of citing it"],
+    ["outQuiet", "Taylor followed the rule", "Compliance, but still no help with the thinking"],
+    ["found", "Taylor learned to use AI well", "A way to start writing, with prompts that help instead of replace"]
+  ],
+  firstNotes: {
+    A: "The zero held Taylor to doing their own thinking, but it treated AI as the problem instead of how Taylor used it.",
+    B: "Taking AI away removed a tool your school wants students to learn, and left Taylor with no way to start.",
+    C: "The warning made AI sound risky for everyone. Honest students got worried, and Taylor's reason stayed hidden.",
+    D: "Asking for the prompts treated AI as something to talk about, and it got you the real story."
+  },
+  tiles: [
+    ["Prevent", [
+      "Model good prompts out loud: brainstorm, outline, get feedback, explain.",
+      "Show students how to cite their prompts, with an example on every assignment.",
+      "Make clear which parts of an assignment are for AI help and which must be the student's own thinking.",
+      "Watch for students falling behind. Missing work often comes before AI shortcuts."]],
+    ["Respond", [
+      "Talk privately and ask to see the prompts.",
+      "Treat a “write it for me” prompt as a skill to teach, not a crime to prove.",
+      "Don't rely on AI checkers. They make mistakes, and students learn to hide AI use instead of citing it.",
+      "Follow your school's AI guidelines."]],
+    ["Reinforce", [
+      "Praise good prompts: “Asking AI to quiz you on the article was smart.”",
+      "Give credit for cited prompts and drafts, not just the final product."]]
+  ],
+  note: "<strong>AI is a tool, not a punishment.</strong> Your school wants students to use AI to help them learn and to cite their prompts. When a student lets AI do the thinking, the fix is teaching better use, not taking AI away. A redo with good, cited prompts can be the consequence.",
+  supports: [
+    "Ask Taylor to show you their prompts",
+    "Redo the paragraph together, using prompts that help Taylor brainstorm and get feedback",
+    "Give Taylor a list of prompt starters, like “Give me three ideas about…” or “What's missing from my paragraph?”",
+    "Show Taylor how to cite prompts",
+    "Help Taylor make a catch-up plan for missing work",
+    "Check in with Taylor's other teachers or counselor",
+    "Give credit for cited prompts and drafts"
+  ],
+  reflectQ: "Think of a student who used AI to do the work instead of to help with it. What did they know, or not know, about using AI well? (Use initials or a description only.)",
+  screens: {
+    scenario: {
+      body: [
+        "Your school encourages students to use AI as a learning tool, to brainstorm, get feedback, and check their understanding, and to cite their prompts.",
+        "You're grading argument paragraphs in Teams Assignments. The prompt: “Should our school require uniforms? Use two reasons from the article.” Taylor usually writes short, simple sentences with a few spelling errors. Here's how Taylor's paragraph starts:"
+      ],
+      chat: [["Taylor's paragraph", "In today's multifaceted educational landscape, it is important to note that school uniforms serve as a powerful catalyst for fostering equity and minimizing socioeconomic disparities."]],
+      after: ["The paragraph never mentions the article, and no prompts are cited. Twenty-seven other paragraphs are waiting to be graded."],
+      choices: [
+        ["A", "Give it a zero, with a comment: “AI wrote this. Redo it on your own if you want credit.”", "fbA"],
+        ["B", "Tell Taylor: “Since you misused AI, you can't use it for the rest of the unit.”", "fbB"],
+        ["C", "At tomorrow's live class, tell everyone: “Some of you had AI write your work. If I see it again, it's a zero.”", "fbC"],
+        ["D", "Message Taylor privately: “I can tell AI helped with this. Can you show me the prompts you used? Let's look at it together.”", "fbD"]
+      ]
+    },
+    fbA: {
+      summary: "After giving a zero", kicker: "You gave it a zero", title: "Fair call.",
+      creditText: "Holding students to doing their own thinking matters, and many teachers would do the same.",
+      happens: ["Taylor redoes it without AI: two sentences, no reasons from the article. Then Taylor messages you:"],
+      chat: [["Taylor", "i thought we were allowed to use ai. now im scared to use it"]],
+      after: ["Taylor doesn't turn in the next assignment."],
+      think: "Your school wants students using AI to help them learn. What did Taylor learn about AI from the zero?",
+      choices: [
+        ["A1", "Leave it. The zero is the consequence.", "outRem"],
+        ["A2", "Call home to report that Taylor had AI write the paragraph.", "outEsc"],
+        ["A3", "Message Taylor: “You're allowed to use AI. Let's figure out how it can help you instead of doing it for you.”", "outCon"]
+      ]
+    },
+    fbB: {
+      summary: "After taking AI away", kicker: "You took AI away", title: "Fair call.",
+      creditText: "It's a logical consequence that connects directly to the behavior.",
+      happens: ["Taylor's next two assignments come in late and mostly blank. Then Taylor messages you:"],
+      chat: [["Taylor", "how am i supposed to do it without it. i cant write"]],
+      think: "Taking AI away removed Taylor's shortcut. Did it give Taylor a way to do the work? Is a tool your school wants students to learn a fair thing to take away?",
+      choices: [
+        ["B1", "Hold firm. No AI for the rest of the unit.", "outRem"],
+        ["B2", "Show Taylor how to use AI to brainstorm and get feedback, with prompts cited.", "outCon"],
+        ["B3", "Have Taylor do all writing live, in class, where you can watch.", "outQuiet"]
+      ]
+    },
+    fbC: {
+      summary: "After warning the whole class", kicker: "You warned the whole class", title: "Fair call.",
+      creditText: "A clear class expectation, without naming anyone, avoids public embarrassment.",
+      happens: ["The class goes quiet. After class, two students who used AI the right way message you:"],
+      chat: [["Priya", "wait are we allowed to use ai or not??"], ["Eli", "i used it to check my grammar and i cited it. is that bad"]],
+      after: ["Taylor says nothing. Taylor's next paragraph is AI-written again, this time with a few typos added so it looks real."],
+      think: "Students heard that AI is risky. Is that the message your school wants them to have?",
+      choices: [
+        ["C1", "Run all future work through an AI checker.", "outEsc"],
+        ["C2", "Reteach the class what good AI use and prompt citations look like, then check in with Taylor.", "outCon"],
+        ["C3", "Turn off AI for the whole class until they show they can handle it.", "outQuiet"]
+      ]
+    },
+    fbD: {
+      summary: "After asking to see the prompts", kicker: "You asked to see the prompts", title: "Strong choice.",
+      creditText: "Asking for the prompts treats AI as a tool to talk about, not a crime to prove.",
+      happens: ["Taylor shares the one prompt they used:"],
+      chat: [["Taylor's prompt", "write a paragraph about why schools should have uniforms"], ["Taylor", "i had 5 things due and didnt know how to start"]],
+      think: "Taylor's prompt asked AI to do the thinking. What would a prompt that helps Taylor think look like?",
+      choices: [
+        ["D1", "“AI isn't supposed to write it for you. This one's a zero.”", "outRem"],
+        ["D2", "“Thanks for showing me. Let's redo it together. We'll write prompts that help you brainstorm and get feedback, and you'll cite them. Then we'll plan the other four.”", "reveal"],
+        ["D3", "“That's fine, but next time, cite your prompt.”", "outQuiet"]
+      ]
+    },
+    outRem: {
+      title: "Taylor checks out",
+      body: ["Taylor stops using AI, and stops turning in most work. Over the next two weeks, Taylor misses three more assignments.", "When you check the gradebook, Taylor's grade has dropped from a C to an F."],
+      think: "The consequence closed out one assignment. What did it teach Taylor about AI, and about asking for help?",
+      opens: [["open", "What would you want to know about Taylor before the next writing assignment?"]]
+    },
+    outEsc: {
+      title: "It turns into a contest",
+      body: ["Taylor insists they didn't use AI, and a parent emails asking for proof. You spend the next week going back and forth.", "Meanwhile, the AI checker flags two students who cited their prompts correctly. Students start hiding their AI use instead of citing it."],
+      think: "Your school wants students to be open about AI. What does this kind of contest teach them?"
+    },
+    outQuiet: {
+      title: "Taylor follows the rule",
+      body: ["Taylor follows the rule you set, and that's about it. The next paragraphs are either a sentence or two, or AI-written with the prompt pasted at the bottom.", "Either way, Taylor still isn't doing the thinking."],
+      think: "The rule is being followed. Is Taylor learning to write, or learning to use AI well?"
+    },
+    outCon: {
+      title: "Taylor opens up",
+      body: ["You and Taylor talk privately. When you ask how they used AI, Taylor goes quiet for a while, then types:"],
+      chat: [["Taylor", "i had 5 things due and i didnt know how to start. i just asked it to write it. i didnt know you could ask it other stuff"]],
+      think: "Taylor just told you two things. What are they, and which would you address first?"
+    }
+  }
+},
+{
+  id: "s4", name: "The Outburst", student: "Cameron", setting: "VR",
+  teaser: "This one is about a moment every teacher dreads: a student cursing at you in front of the class. It's also about what happens after.",
+  status: ["VR · Geometry", "9:05 AM", "16 students", "First period"],
+  facts: [
+    "Cameron's family was evicted last weekend. Cameron is staying with an aunt.",
+    "Cameron is logging in from a crowded living room, with five other people around.",
+    "Cameron's avatar wasn't moving because Cameron didn't want anyone at home to hear them talking in class.",
+    "Cameron has never cursed at a teacher before."
+  ],
+  lede: "The outburst was most likely about <strong>escape</strong>: getting the spotlight off them at a moment they couldn't handle. It was aimed at you, but it wasn't really about you.",
+  twist: "That doesn't make the language okay. It means the consequence needs to come with a conversation. Removal may be the right call in a moment like this. What happens after the removal is what brings a student back.",
+  summaryLine: "Cameron's outburst was most likely about escape, during a crisis at home. It was aimed at the teacher, but it wasn't really about the teacher.",
+  outcomes: [
+    ["outRem", "Cameron came back angry", "Time away, but no repair and no plan for coming back"],
+    ["outEsc", "It became a standoff", "A fight to win instead of a problem to solve"],
+    ["outQuiet", "Cameron came back silent", "A broken relationship nobody talked about"],
+    ["found", "You held a restorative conversation", "A consequence, a repair, and a way back in"]
+  ],
+  firstNotes: {
+    A: "Removing Cameron may have been the right call. What mattered next was whether anyone talked with Cameron before they came back.",
+    B: "Asking for a public apology put Cameron on the spot again, right when they were trying to escape it.",
+    C: "Not reacting avoided a power struggle, but the class needed to hear that the language wasn't okay.",
+    D: "You set a limit, stayed calm, and gave Cameron a way out of the spotlight. That bought time for a real conversation."
+  },
+  tiles: [
+    ["In the moment", [
+      "Stay calm and keep your voice low. Don't match the student's intensity.",
+      "Limit the disruption: mute, move to a quiet zone, or remove if needed.",
+      "Tell the class briefly that you'll handle it: “That's not okay. I'll take care of it.”",
+      "Skip the public apology. It usually makes things worse."]],
+    ["The restorative conference", [
+      "Reconnect: “My goal is to help you be successful.”",
+      "Hear their side: “Tell me what was happening for you.”",
+      "Name the impact: who was affected, and how.",
+      "Repair: choose a realistic way to make it right.",
+      "Plan the return: a few clear, observable steps.",
+      "Fresh start: “You're welcome back.”"]],
+    ["Coming back", [
+      "Hold the conference before the student returns, once they're calm.",
+      "Include a counselor, administrator, or family member when appropriate.",
+      "Check in after the first class back.",
+      "Connect the student with support if something bigger is going on."]]
+  ],
+  note: "<strong>Consequences and conversations go together.</strong> Disrespect and foul language need a response, and your school's policy may require removal or a referral. A restorative conference doesn't replace the consequence. It's what makes sure the student comes back ready to learn.",
+  supports: [
+    "Hold a restorative conference before Cameron returns",
+    "Ask Cameron what was happening before deciding what happened",
+    "Let Cameron choose a realistic way to repair, like a private apology",
+    "Create a return plan with a break signal Cameron can use",
+    "Connect Cameron with the counselor or social worker",
+    "Check in with Cameron privately at the start of class for a week",
+    "Let Cameron keep their mic off and use chat while things are hard at home"
+  ],
+  reflectQ: "Think of a time a student said something hurtful to you. Looking back, what might have been going on for them? (Use initials or a description only.)",
+  screens: {
+    scenario: {
+      body: [
+        "It's 9:05, first period, and you're in VR with 16 students. Groups are building 3D shapes together.",
+        "Cameron's avatar hasn't moved since class started. You've already asked Cameron twice to join their group. The third time, you say, “Cameron, I need you building with your group, please.” Cameron unmutes:"
+      ],
+      chat: [["Cameron · mic", "Leave me the f— alone. Nobody cares about your stupid class."], ["Chat", "😳😳"], ["Jade", "ohhhh"]],
+      after: ["The whole class heard it. Everyone is waiting to see what you'll do."],
+      choices: [
+        ["A", "“You do not talk to me like that.” Remove Cameron from the session.", "fbA"],
+        ["B", "Say: “That language is not okay. Apologize to the class right now.”", "fbB"],
+        ["C", "Don't react. Keep teaching, and deal with it after class.", "fbC"],
+        ["D", "Mute Cameron and keep the class going. Then send a private message: “That's not okay, and I can tell something's going on. Take five minutes in the quiet zone, and I'll check in.”", "fbD"]
+      ]
+    },
+    fbA: {
+      summary: "After removing Cameron", kicker: "You removed Cameron", title: "Fair call.",
+      creditText: "Profanity aimed at a teacher in front of the class is serious. Many school policies call for removal, and it may be the right move here.",
+      happens: ["Cameron leaves the session. The class buzzes for a few minutes, then settles.", "The next morning, Cameron logs in. Their avatar sits in a corner, and Cameron doesn't say a word."],
+      think: "The removal ended the moment. What needs to happen before Cameron is really back in class?",
+      choices: [
+        ["A1", "Let it go. The removal was the consequence.", "outQuiet"],
+        ["A2", "Write a referral and let administration take it from here.", "outRem"],
+        ["A3", "Before class, hold a private restorative conversation with Cameron.", "outCon"]
+      ]
+    },
+    fbB: {
+      summary: "After asking for a public apology", kicker: "You asked for a public apology", title: "Fair call.",
+      creditText: "You set a clear limit right away, and the class saw you do it.",
+      happens: ["Cameron unmutes:"],
+      chat: [["Cameron · mic", "No. Why should I? You're the one who wouldn't leave me alone."]],
+      after: ["Now the whole class is watching the two of you."],
+      think: "What would an apology in front of the class mean to Cameron right now? What's at stake for Cameron in front of classmates?",
+      choices: [
+        ["B1", "“Then you're done for today.” Remove Cameron and write a referral.", "outRem"],
+        ["B2", "Keep insisting. Cameron needs to apologize before class continues.", "outEsc"],
+        ["B3", "Say calmly, “We'll talk later,” and go back to teaching.", "outCon"]
+      ]
+    },
+    fbC: {
+      summary: "After not reacting", kicker: "You didn't react", title: "Fair call.",
+      creditText: "Not reacting keeps you out of a power struggle in front of an audience.",
+      happens: ["You keep teaching, but the chat keeps going:"],
+      chat: [["Jade", "did u hear what cameron said"], ["Noah", "so we can just cuss now?"]],
+      after: ["Cameron logs off before class ends."],
+      think: "Not reacting kept things calm. What did the class learn about what happens when someone curses at a teacher?",
+      choices: [
+        ["C1", "Let it go. It's over, and bringing it up will only make it worse.", "outQuiet"],
+        ["C2", "Tell the class, “That wasn't okay, and I'll handle it privately,” then set up a conversation with Cameron.", "outCon"],
+        ["C3", "Email Cameron's family that night about the language.", "outEsc"]
+      ]
+    },
+    fbD: {
+      summary: "After limiting it and giving Cameron a way out", kicker: "You limited it and gave Cameron a way out", title: "Strong choice.",
+      creditText: "You stopped the disruption, stayed calm, and gave Cameron a way out of the spotlight that wasn't a fight.",
+      happens: ["Cameron moves to the quiet zone. When you check in five minutes later, Cameron types:"],
+      chat: [["Cameron", "whatever. im not apologizing"]],
+      think: "Cameron is still upset, but the moment didn't grow. What does Cameron need before you talk about what happened?",
+      choices: [
+        ["D1", "“Then you're done for today, and I'm writing you up.”", "outRem"],
+        ["D2", "“You don't have to apologize right now. Let's talk tomorrow before class about what happened and how to make it right.”", "reveal"],
+        ["D3", "Let Cameron stay in the quiet zone for the rest of class and leave it there.", "outQuiet"]
+      ]
+    },
+    outRem: {
+      title: "Cameron comes back angry",
+      body: ["The referral leads to two days out of class. When Cameron comes back, nobody has talked with them about what happened.", "Cameron is further behind, avoids you, and snaps at a classmate on the first day back."],
+      think: "Cameron served the consequence. What's still missing before Cameron is really back?",
+      opens: [["open", "What would you want to know about Cameron before they come back?"]]
+    },
+    outEsc: {
+      title: "It becomes a standoff",
+      body: ["Cameron won't back down, and the conflict spreads, first in front of the class, then into emails with Cameron's family, who feel Cameron is being picked on.", "By the end of the week, Cameron has stopped logging in to your class."],
+      think: "Who could win this standoff? What would winning have cost?"
+    },
+    outQuiet: {
+      title: "Cameron comes back silent",
+      body: ["Nobody brings it up again. Cameron comes back and doesn't talk, doesn't move their avatar, and won't respond when you check in.", "The class still remembers. The tension between you and Cameron never really goes away."],
+      think: "The incident is over, but was anything repaired? What do Cameron and the class need for a fresh start?"
+    },
+    outCon: {
+      title: "The restorative conversation",
+      body: ["Before class the next morning, you meet with Cameron privately. You start with: “My goal is to help you be successful in class. I want to hear what happened from your side.”", "After a long pause, Cameron types:"],
+      chat: [["Cameron", "we got evicted saturday. im at my aunts and theres like 6 people in the room. i didnt want everyone hearing me"]],
+      think: "Cameron's words were aimed at you. What were they really about? What would a fair way to make it right look like now?"
+    }
+  }
+},
+{
+  id: "s5", name: "The Field Trip", student: "Riley", setting: "VR",
+  teaser: "This is the last scenario. It's about a student who seems to be refusing to participate.",
+  status: ["VR · Museum field trip", "11:20 AM", "20 students", "Group tour"],
+  facts: [
+    "Riley has a 504 plan for sensory processing, with accommodations for reduced noise and breaks.",
+    "The exhibit hall had 20 voices, background music, and narration all playing at once.",
+    "Riley does well in quiet VR spaces and in small breakout areas.",
+    "Nobody had ever adjusted Riley's headset volume or audio settings."
+  ],
+  lede: "The behavior was most likely about <strong>sensory overload</strong>: getting away from noise, movement, and lights that were too much. It looked like refusal, but Riley wasn't saying “I won't.” Riley was saying “I can't.”",
+  twist: "Remember “can't vs. won't”? Leaving the group looked like defiance, just like Jordan's teleporting in Scenario 1 looked like goofing off. Before you respond to behavior in VR, check the environment.",
+  summaryLine: "Riley's behavior was most likely about sensory overload. It looked like refusal, but it was “I can't,” not “I won't.”",
+  outcomes: [
+    ["outRem", "Riley shut down", "A consequence for something Riley couldn't control"],
+    ["outEsc", "It became a battle", "More pressure on a student who was already overloaded"],
+    ["outQuiet", "Riley was there, but not really", "Getting through it, without learning"],
+    ["found", "You changed the environment", "A way to stay in VR without being overwhelmed"]
+  ],
+  firstNotes: {
+    A: "The ultimatum got Riley back for a minute, but the room was still too much.",
+    B: "Riley's family got Riley back online, but Riley came back upset and still overloaded.",
+    C: "Leaving Riley alone avoided a fight, but Riley missed the learning and the group lost a member.",
+    D: "Offering a break with a plan to come back helped you find out what was really going on."
+  },
+  tiles: [
+    ["Prevent", [
+      "Check 504s and IEPs for sensory accommodations before VR activities.",
+      "Turn down background audio and music in busy VR spaces.",
+      "Set up a quiet space students can use without having to ask twice.",
+      "Preview new VR spaces: tell students what they'll see and hear."]],
+    ["Respond", [
+      "Ask yourself: is this “can't” or “won't”?",
+      "Offer a short headset break with a clear plan to come back.",
+      "Check in privately: “What's hard in there right now?”",
+      "Avoid ultimatums with a student who's overloaded."]],
+    ["Reinforce", [
+      "Praise self-advocacy: “Thanks for telling me it was too loud. That helps me.”",
+      "Teach a break signal students can use before they get overwhelmed."]]
+  ],
+  note: "<strong>Can't vs. won't.</strong> A student who's overloaded can't respond to pressure the way you'd expect. Leaving, freezing, or taking the headset off may be the only way they know to cope. Change the environment first, then the expectations.",
+  supports: [
+    "Check Riley's 504 for sensory accommodations before VR activities",
+    "Turn down background audio and music",
+    "Let Riley join from a quieter space in VR",
+    "Teach Riley a break signal to use before getting overwhelmed",
+    "Preview new VR spaces with Riley ahead of time",
+    "Adjust Riley's headset volume and audio settings",
+    "Praise Riley for speaking up: “Thanks for telling me. That helps me.”"
+  ],
+  reflectQ: "Think of a student whose behavior looks like refusal. Could it be “can't” instead of “won't”? What in the environment might be too much? (Use initials or a description only.)",
+  screens: {
+    scenario: {
+      body: [
+        "It's 11:20, and your class is on a virtual field trip to a history museum in VR. Twenty avatars are moving through the exhibit hall, groups are talking at once, and music and narration are playing at each exhibit.",
+        "Riley keeps drifting away from their group to an empty corner and facing the wall. You've asked Riley twice to rejoin the group. This time, Riley types:"
+      ],
+      chat: [["Riley", "no"], ["Sofia · mic", "Riley took their headset off"]],
+      after: ["Riley's avatar goes still. Riley's group needs them to finish the tour worksheet."],
+      choices: [
+        ["A", "“Riley, this is a required activity. Put your headset back on and rejoin your group now, or it's a zero for today.”", "fbA"],
+        ["B", "Text Riley's parent: “Riley took off their headset and is refusing to participate. Can you get them back on?”", "fbB"],
+        ["C", "Pick your battles. Let Riley sit this one out and keep the tour going.", "fbC"],
+        ["D", "Message Riley privately: “Looks like a lot is going on in there. Want a 3-minute headset break, then join from the quiet room?”", "fbD"]
+      ]
+    },
+    fbA: {
+      summary: "After the ultimatum", kicker: "You gave Riley an ultimatum", title: "Fair call.",
+      creditText: "Clear expectations and follow-through matter, and the activity is required.",
+      happens: ["Riley puts the headset back on. Within a minute, Riley's avatar is back in the corner. Riley types:"],
+      chat: [["Riley", "its too loud. i cant"]],
+      after: ["Then Riley logs off."],
+      think: "Riley followed your direction for a minute. What made it impossible to stay?",
+      choices: [
+        ["A1", "Follow through. Riley gets the zero for today.", "outRem"],
+        ["A2", "Message Riley's family to get Riley back online.", "outEsc"],
+        ["A3", "Message Riley: “Too loud makes sense. Want to try the quiet room?”", "outCon"]
+      ]
+    },
+    fbB: {
+      summary: "After texting Riley's parent", kicker: "You texted Riley's parent", title: "Fair call.",
+      creditText: "Families are partners in virtual school, and they can see what you can't.",
+      happens: ["Riley's parent brings Riley back to the computer. Through Riley's mic, you hear:"],
+      chat: [["Riley's parent", "Put it on. Now. Your teacher says you're refusing."]],
+      after: ["Riley puts the headset back on, crying, and doesn't speak for the rest of class."],
+      think: "Riley is back online. Is Riley ready to learn? What did Riley need that the text didn't give them?",
+      choices: [
+        ["B1", "Leave it. Riley is back in class.", "outQuiet"],
+        ["B2", "Write it up as refusal to participate.", "outEsc"],
+        ["B3", "Message Riley privately: “Are you okay? What was hard in there?”", "outCon"]
+      ]
+    },
+    fbC: {
+      summary: "After letting Riley sit it out", kicker: "You let Riley sit it out", title: "Fair call.",
+      creditText: "Picking your battles is real, and Riley isn't bothering anyone.",
+      happens: ["Riley stays out for the rest of the tour. Riley's group finishes without them, and one student types:"],
+      chat: [["Marcus", "riley never does anything in vr. its not fair"]],
+      after: ["The same thing happens the next two times your class goes into VR."],
+      think: "Leaving Riley alone avoided a conflict. What is Riley missing, and what is the group learning about Riley?",
+      choices: [
+        ["C1", "Give Riley a worksheet to do instead of VR from now on.", "outQuiet"],
+        ["C2", "Tell Riley's group they need to include Riley next time.", "outEsc"],
+        ["C3", "Message Riley after class: “I noticed VR has been hard. Can you tell me what it's like in there for you?”", "outCon"]
+      ]
+    },
+    fbD: {
+      summary: "After offering a break", kicker: "You offered a break", title: "Strong choice.",
+      creditText: "You wondered whether the room itself was the problem, and you offered a break with a plan to come back.",
+      happens: ["Riley takes the headset break. After three minutes, Riley types:"],
+      chat: [["Riley", "ok. its so loud in there. everyone talks at once and the music"]],
+      think: "Riley just told you what's going on. Was this defiance?",
+      choices: [
+        ["D1", "“Thanks for telling me. Now put your headset back on and rejoin your group.”", "outQuiet"],
+        ["D2", "“Thanks for telling me. Let's turn down the exhibit audio, and you can join your group from the quieter gallery next door.”", "reveal"],
+        ["D3", "“Okay. You can skip VR today and do the worksheet from the slides.”", "outQuiet"]
+      ]
+    },
+    outRem: {
+      title: "Riley shuts down",
+      body: ["Riley gets a zero for the activity. The next time your class goes into VR, Riley doesn't log in at all.", "Riley's VR attendance starts to slip, and so does Riley's grade."],
+      think: "The consequence was for refusing. What if Riley couldn't, rather than wouldn't?",
+      opens: [["open", "What would you want to know about Riley before the next VR activity?"]]
+    },
+    outEsc: {
+      title: "It becomes a battle",
+      body: ["The pressure keeps building. The next time your class goes into VR, Riley refuses to put the headset on at all.", "Riley's family emails, asking why Riley is being punished for something they can't help."],
+      think: "This started as a student leaving the group. How did it turn into a battle?"
+    },
+    outQuiet: {
+      title: "Riley is there, but not really",
+      body: ["Riley gets through the activity, but not as part of the class. Riley is either hanging at the edge of the group, just enduring it, or working alone on a worksheet while everyone else explores.", "Next time the class goes into VR, the same thing happens."],
+      think: "Riley is following the plan. Is Riley learning, or just getting through it?"
+    },
+    outCon: {
+      title: "Riley tells you what's wrong",
+      body: ["When you check in, Riley takes a while to answer, then types:"],
+      chat: [["Riley", "its too loud. everyone talks at once and the music and the lights. my brain gets full and i cant think"]],
+      think: "Riley just told you something important. Was this defiance? What could make VR work for Riley?"
+    }
+  }
+}
+];
+
+// ---- Build the notebook: cover → (divider →) each scenario's pages → back cover ----
+const STAGES = ["Situation", "Your move", "What happens", "Bigger picture", "Strategies", "Reflect"];
+const N = SCENARIOS.length;
+const S = { intro: { stage: 0, cta: "Open the notebook" }, summary: { stage: 0 } };
+
+SCENARIOS.forEach((sc, i) => {
+  sc.number = i + 1;
+  const id = k => `${sc.id}:${k}`;
+  const last = i === N - 1;
+  const add = (k, def) => { S[id(k)] = { sc, ...def, next: def.next && (def.next.includes(":") || def.next === "summary" ? def.next : id(def.next)), choices: def.choices && def.choices.map(([c, t, nx]) => [c, t, id(nx)]) }; };
+  if (i === 0) S.intro.next = id("scenario");
+  else add("divider", { stage: 0, divider: true, next: "scenario", cta: `Start Scenario ${i + 1} →` });
+  const sv = sc.screens;
+  add("scenario", { stage: 1, summary: "The situation", kicker: "The situation", title: sc.name, status: true, prompt: "What do you do?", opens: [["why", "What made you choose that?"]], ...sv.scenario });
+  for (const k of ["fbA", "fbB", "fbC", "fbD"]) add(k, { stage: 2, prompt: "Now what?", ...sv[k] });
+  for (const k of ["outRem", "outEsc", "outQuiet", "outCon"]) add(k, { stage: 3, kicker: "What happens next", summary: sv[k].title, next: "reveal", ...sv[k] });
+  add("reveal", { stage: 4, summary: "What you didn't know", kicker: "The bigger picture", title: "What you didn't know", next: "spotlight", special: "reveal",
+    opens: [["open", "Look back at your first choice. Knowing this now, would you choose differently? Why or why not?"]] });
+  add("spotlight", { stage: 5, summary: `Supports I'd try with ${sc.student}`, kicker: "Strategies", title: `What could help ${sc.student}?`, next: "reflect", special: "spotlight",
+    opens: [["open", "Anything else you'd try?"]] });
+  add("reflect", { stage: 6, summary: "My reflection", kicker: "Reflect", title: "Back to your classroom",
+    next: last ? "summary" : `${SCENARIOS[i + 1].id}:divider`, cta: last ? "See my answers" : "Turn the page →",
+    body: ["These answers go on your copy. Bring them to the group discussion."],
+    opens: [["r1", sc.reflectQ], ["r2", "Name one strategy from this scenario you'll try in the next two weeks."]] });
+});
+
+// Hand-drawn-looking comic burst, like the one on the behavior notebooks.
+const BURST = (() => {
+  let r = 7; const rnd = () => (r = (r * 9301 + 49297) % 233280) / 233280;
+  const n = 15, pts = [];
+  for (let i = 0; i < n * 2; i++) {
+    const a = (i / (n * 2)) * Math.PI * 2 - Math.PI / 2 + (rnd() - .5) * .08;
+    const rad = i % 2 === 0 ? 49 - rnd() * 4 : 40 - rnd() * 3;
+    pts.push((50 + Math.cos(a) * rad).toFixed(1) + "," + (50 + Math.sin(a) * rad).toFixed(1));
+  }
+  return pts.join(" ");
+})();
+const burst = (title, fill) => `<div class="burst"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polygon points="${BURST}" transform="translate(1.6 2.6)" fill="#151515"/><polygon points="${BURST}" fill="${fill}" stroke="#151515" stroke-width="3" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg><h1 tabindex="-1">${title}</h1></div>`;
+
+const KEY = "pd-behavior-notebook";
+const fresh = () => ({ name: "", history: ["intro"], answers: {}, supports: {} });
+let state = fresh();
+
+function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+function load() {
+  try { const raw = localStorage.getItem(KEY); if (raw) { const s = JSON.parse(raw); if (s && Array.isArray(s.history) && s.history.every(id => S[id])) return s; } } catch (e) {}
+  return null;
+}
+const cur = () => state.history.at(-1);
+const ans = id => (state.answers[id] ||= {});
+const sups = sc => (state.supports[sc.id] ||= []);
+const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const paras = arr => (arr || []).map(p => `<p>${p}</p>`).join("");
+const chat = rows => `<div class="chat" aria-label="Chat and mic">${rows.map(([n, m]) => `<div class="msg"><b>${n}</b><span>${m}</span></div>`).join("")}</div>`;
+const fid = id => id.replace(":", "-");
+const field = (id, f, q, opt) => `<label class="q" for="f-${fid(id)}-${f}">${q}${opt ? ' <span class="opt">Optional</span>' : ""}<textarea id="f-${fid(id)}-${f}" data-id="${id}" data-f="${f}">${esc(ans(id)[f])}</textarea></label>`;
+const choiceText = (id, k) => (S[id].choices.find(c => c[0] === k) || [])[1] || "";
+const strip = t => t.replace(/<[^>]+>/g, "");
+const scenLabel = sc => `Scenario ${sc.number}: ${sc.name}`;
+
+function pathInfo(sc) {
+  const first = ans(`${sc.id}:scenario`).choice;
+  const hit = state.history.find(id => id.startsWith(`${sc.id}:out`));
+  const out = !hit || hit.endsWith("outCon") ? "found" : hit.split(":")[1];
+  return { first, out };
+}
+
+function renderReveal(sc) {
+  const { first, out } = pathInfo(sc);
+  return `
+    <ul class="plain">${sc.facts.map(f => `<li>${f}</li>`).join("")}</ul>
+    <p class="lede">${sc.lede}</p>
+    ${sc.twist ? `<p class="note">${sc.twist}</p>` : ""}
+    ${first ? `<div class="path"><p class="sub" style="margin:0">Your path</p><p>You started with <strong>${first})</strong> ${choiceText(`${sc.id}:scenario`, first)}</p><p>${sc.firstNotes[first]}</p></div>` : ""}
+    <div class="tbl"><table>
+      <thead><tr><th>If…</th><th>${sc.student} got…</th></tr></thead>
+      <tbody>${sc.outcomes.map(([k, a, b]) => `<tr class="${k === out ? "mine" : ""}"><td>${a}${k === out ? '<span class="pill">Your path</span>' : ""}</td><td>${b}</td></tr>`).join("")}</tbody>
+    </table></div>`;
+}
+
+function renderSpotlight(sc) {
+  const chosen = sups(sc);
+  return `
+    <div class="grid2">${sc.tiles.map(([h, items]) => `<div class="tile"><h3>${h}</h3><ul>${items.map(i => `<li>${i}</li>`).join("")}</ul></div>`).join("")}</div>
+    <p class="note">${sc.note}</p>
+    <h2 class="ask">Which supports would you try with ${sc.student} next time?</h2>
+    <div class="checks">${sc.supports.map((s, i) => `<label for="sup-${sc.id}-${i}"><input type="checkbox" id="sup-${sc.id}-${i}" data-sc="${sc.id}" data-sup="${i}" ${chosen.includes(i) ? "checked" : ""}><span>${s}</span></label>`).join("")}</div>`;
+}
+
+function renderIntro() {
+  return `<div class="stack">
+    ${burst("What would you do?", "#F6E84E")}
+    <p class="cover-sub">Behavior Management in Teams &amp; VR</p>
+    <ul class="how">
+      <li><span class="key">1</span><span>This notebook has ${N} scenarios. In each one, you'll step into a real classroom moment and make decisions. Each choice leads somewhere different.</span></li>
+      <li><span class="key">2</span><span>Choose what you'd <strong>most likely do in the moment</strong>, not what you think the “right” answer is.</span></li>
+      <li><span class="key">3</span><span>Nothing is graded. Your answers stay in this browser and aren't sent anywhere. You can stop and pick up where you left off on the same device.</span></li>
+      <li><span class="key">4</span><span>Each scenario takes about 10 minutes. At the end, copy your answers to bring to the group discussion.</span></li>
+    </ul>
+    <label class="q" for="name">Your name <span class="opt">Optional, goes on your notebook and your copy</span><input type="text" id="name" value="${esc(state.name)}" autocomplete="name"></label>
+    <p class="cover-name" id="cover-name">${esc(state.name)}</p>
+  </div>`;
+}
+
+function renderDivider(s) {
+  const sc = s.sc;
+  return `<div class="stack">
+    <p class="kicker">Up next</p>
+    ${burst(`Scenario ${sc.number}`, "#FFFFFF")}
+    <p class="cover-sub">${sc.name}</p>
+    <span class="setting">${sc.setting}</span>
+    <p class="lede center">You finished Scenario ${sc.number - 1}. ${sc.teaser || ""}</p>
+  </div>`;
+}
+
+function renderScreen(id) {
+  const s = S[id], a = ans(id), sc = s.sc;
+  return `<div class="stack">
+    <p class="kicker">${s.kicker}</p>
+    ${burst(s.title, "#F6E84E")}
+    ${s.status ? `<div class="status">${sc.status.map(t => `<span>${t}</span>`).join("")}</div>` : ""}
+    ${s.creditText ? `<p>${s.creditText}</p>` : ""}
+    ${s.happens ? `<p class="sub">What happens</p>${paras(s.happens)}` : ""}
+    ${paras(s.body)}
+    ${s.chat ? chat(s.chat) : ""}
+    ${paras(s.after)}
+    ${s.special === "reveal" ? renderReveal(sc) : ""}
+    ${s.special === "spotlight" ? renderSpotlight(sc) : ""}
+    ${s.think ? `<div class="think"><span class="lab">Think about it</span><p>${s.think}</p>${field(id, "think", "Your thoughts", true)}</div>` : ""}
+    ${s.choices ? `<h2 class="ask">${s.prompt}</h2><div class="choices" role="group" aria-label="${s.prompt}">${s.choices.map(([k, t]) => `<button type="button" class="choice" data-k="${k}" aria-pressed="${a.choice === k}"><span class="key">${k}</span><span>${t}</span></button>`).join("")}</div>` : ""}
+    ${(s.opens || []).map(([f, q]) => field(id, f, q, true)).join("")}
+  </div>`;
+}
+
+// Answers grouped by scenario, in the order the teacher went through them.
+function summaryData() {
+  return SCENARIOS.map(sc => {
+    const sections = [];
+    for (const id of state.history) {
+      const s = S[id];
+      if (s.sc !== sc || !s.summary) continue;
+      const a = ans(id), items = [];
+      if (s.choices && a.choice) items.push(["I chose", `${a.choice}) ${strip(choiceText(id, a.choice))}`]);
+      if (s.think && a.think) items.push([s.think, a.think]);
+      if (s.special === "spotlight") sups(sc).slice().sort((x, y) => x - y).forEach(i => items.push(["", "• " + strip(sc.supports[i])]));
+      for (const [f, q] of s.opens || []) if (a[f]) items.push([q, a[f]]);
+      if (s.special === "reveal") items.unshift(["", sc.summaryLine]);
+      if (s.stage === 3) items.unshift(["", "Outcome: " + s.title]);
+      sections.push([s.summary, items]);
+    }
+    return [sc, sections];
+  }).filter(([, sections]) => sections.length);
+}
+
+const today = () => new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+
+function summaryText() {
+  let t = `Behavior Management in Teams & VR\n${state.name ? "Name: " + state.name + "\n" : ""}Date: ${today()}\n`;
+  for (const [sc, sections] of summaryData()) {
+    t += `\n==== ${scenLabel(sc).toUpperCase()} ====\n`;
+    for (const [title, items] of sections) {
+      t += `\n${title.toUpperCase()}\n`;
+      for (const [q, v] of items) t += q ? `${q}\n  ${v}\n` : `${v}\n`;
+    }
+  }
+  return t;
+}
+
+function renderSummary() {
+  const data = summaryData();
+  return `<div class="stack">
+    ${burst("Your answers", "#FFFFFF")}
+    <p>Copy your answers and paste them into Word, OneNote, or an email to yourself. Bring them to the group discussion.</p>
+    <div class="copyrow"><button class="btn" type="button" id="copy">Copy my answers</button><span class="toast" id="toast" role="status"></span></div>
+    <textarea id="fallback" hidden readonly aria-label="Your answers as text"></textarea>
+    <div class="copy">
+      <section><h3>Behavior Management in Teams &amp; VR</h3><p class="a">${state.name ? `<b>${esc(state.name)}</b> · ` : ""}${today()}</p></section>
+      ${data.map(([sc, sections]) => `<h2 class="scen">${scenLabel(sc)}</h2>${sections.map(([title, items]) => `<section><h3>${title}</h3>${items.length ? items.map(([q, v]) => q ? `<p class="a">${esc(q)}</p><p>${esc(v)}</p>` : `<p>${esc(v)}</p>`).join("") : `<p class="a">No answers written.</p>`}</section>`).join("")}`).join("")}
+    </div>
+  </div>`;
+}
+
+function render() {
+  const id = cur(), s = S[id];
+  const inScenario = s.stage > 0;
+  document.getElementById("series").textContent = s.sc && inScenario
+    ? `Scenario ${s.sc.number} of ${N} · ${s.sc.name}`
+    : "Behavior Management in Teams & VR";
+  const track = document.getElementById("track");
+  track.innerHTML = STAGES.map((n, i) => {
+    const st = i + 1, cls = s.stage > st ? "done" : s.stage === st ? "now" : "";
+    return `<li class="${cls}"${s.stage === st ? ' aria-current="step"' : ""}><span class="bar"></span><span class="lab">${n}</span></li>`;
+  }).join("");
+  track.hidden = !inScenario;
+
+  let html = id === "intro" ? renderIntro() : id === "summary" ? renderSummary() : s.divider ? renderDivider(s) : renderScreen(id);
+  if (id !== "summary") {
+    const blocked = s.choices && !ans(id).choice;
+    html += `<div class="actions">${state.history.length > 1 ? '<button type="button" class="back" id="back">← Back</button>' : ""}<button type="button" class="btn" id="next" ${blocked ? "disabled" : ""}>${s.cta || "Turn the page →"}</button></div>`;
+  } else {
+    html += `<div class="actions"><button type="button" class="back" id="back">← Back</button></div>`;
+  }
+  if (id !== "intro") html += `<span class="pageno">${state.history.length - 1}</span>`;
+  const el = document.getElementById("screen");
+  el.className = "page" + (id === "intro" ? " cover" : id === "summary" ? " back-cover" : s.divider ? " divider" : "");
+  el.innerHTML = html;
+  save();
+}
+
+const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// Forward: the current page lifts off the spiral and turns away, showing the next page underneath.
+// Back: the previous page turns back over from the spiral.
+function turn(forward, change) {
+  const el = document.getElementById("screen");
+  window.scrollTo({ top: 0 });
+  if (forward && !reduced()) {
+    const old = el.cloneNode(true);
+    old.removeAttribute("id");
+    old.removeAttribute("aria-live");
+    old.setAttribute("aria-hidden", "true");
+    old.querySelectorAll("[id]").forEach(n => n.removeAttribute("id"));
+    el.querySelectorAll("textarea,input").forEach((n, i) => { const c = old.querySelectorAll("textarea,input")[i]; if (c) { c.value = n.value; c.checked = n.checked; } });
+    old.classList.add("turn-out");
+    change();
+    document.getElementById("stage").appendChild(old);
+    document.querySelectorAll(".turn-out").forEach(n => n !== old && n.remove());
+    old.addEventListener("animationend", () => old.remove(), { once: true });
+    setTimeout(() => old.remove(), 700);
+  } else {
+    change();
+    if (!reduced()) {
+      el.classList.remove("turn-in"); void el.offsetWidth; el.classList.add("turn-in");
+      el.addEventListener("animationend", () => el.classList.remove("turn-in"), { once: true });
+    }
+  }
+  document.querySelector("#screen h1")?.focus({ preventScroll: true });
+}
+
+document.getElementById("screen").addEventListener("click", e => {
+  const id = cur();
+  const choice = e.target.closest(".choice");
+  if (choice) {
+    ans(id).choice = choice.dataset.k;
+    document.querySelectorAll("#screen .choice").forEach(b => b.setAttribute("aria-pressed", String(b === choice)));
+    document.getElementById("next").disabled = false;
+    save();
+    return;
+  }
+  if (e.target.closest("#next")) {
+    const s = S[id];
+    const next = s.choices ? s.choices.find(c => c[0] === ans(id).choice)[2] : s.next;
+    turn(true, () => { state.history.push(next); render(); });
+    return;
+  }
+  if (e.target.closest("#back")) {
+    turn(false, () => { state.history.pop(); render(); });
+    return;
+  }
+  if (e.target.closest("#copy")) {
+    const text = summaryText(), toast = document.getElementById("toast"), fb = document.getElementById("fallback");
+    const fallback = () => { fb.hidden = false; fb.value = text; fb.focus(); fb.select(); toast.textContent = "Select all of the text below and copy it."; };
+    try {
+      navigator.clipboard.writeText(text).then(() => { toast.textContent = "Copied. Paste it wherever you keep notes."; }, fallback);
+    } catch (err) { fallback(); }
+  }
+});
+
+document.getElementById("screen").addEventListener("input", e => {
+  const t = e.target;
+  if (t.id === "name") { state.name = t.value; document.getElementById("cover-name").textContent = t.value; }
+  else if (t.dataset.f) ans(t.dataset.id)[t.dataset.f] = t.value;
+  else if (t.dataset.sup !== undefined) {
+    const sc = SCENARIOS.find(x => x.id === t.dataset.sc), i = Number(t.dataset.sup);
+    state.supports[sc.id] = t.checked ? [...new Set([...sups(sc), i])] : sups(sc).filter(x => x !== i);
+  }
+  save();
+});
+
+document.getElementById("restart").addEventListener("click", () => {
+  const btn = document.getElementById("restart");
+  if (btn.dataset.armed) {
+    delete btn.dataset.armed; btn.textContent = "Start over";
+    turn(false, () => { state = fresh(); render(); });
+  } else {
+    btn.dataset.armed = "1"; btn.textContent = "Erase answers and restart?";
+    setTimeout(() => { delete btn.dataset.armed; btn.textContent = "Start over"; }, 4000);
+  }
+});
+
+function start(data) {
+  state = (data && data.state) || load() || fresh();
+  render();
+}
+window.claude?.hot?.snapshot?.(() => ({ state }));
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+</script>
+
+</body>
+</html>
