@@ -160,8 +160,8 @@ const SCENARIOS = [
   firstNotes: {
     A: "Muting stopped the noise, but the reason behind it was still there.",
     B: "Correcting Jordan in front of classmates gave them an audience right when they wanted to avoid the work.",
-    C: "The timekeeper job is a strong strategy for attention-seeking. Here it gave Jordan a reason to skip the reading.",
-    D: "Your private message gave Jordan a safe way to tell you what was wrong."
+    C: "Your private message gave Jordan a safe way to tell you what was wrong.",
+    D: "The timekeeper job is a strong strategy for attention-seeking. Here it gave Jordan a reason to skip the reading."
   },
   tiles: [
     ["Prevent", [
@@ -198,8 +198,8 @@ const SCENARIOS = [
       choices: [
         ["A", "Mute Jordan and keep teaching. You'll deal with it after class.", "fbA"],
         ["B", "Say aloud: “Jordan, I've already asked once. Go back to your group, please.”", "fbB"],
-        ["C", "Make Jordan the timekeeper for their group so they have something to do.", "fbC"],
-        ["D", "Send Jordan a private message: “I want you with us. Can you head back to your group? Do you need help getting started?”", "fbD"]
+        ["C", "Send Jordan a private message: “I want you with us. Can you head back to your group? Do you need help getting started?”", "fbD"],
+        ["D", "Make Jordan the timekeeper for their group so they have something to do.", "fbC"]
       ]
     },
     fbA: {
@@ -236,9 +236,9 @@ const SCENARIOS = [
       after: ["Then Jordan teleports to another group."],
       think: "Look at when the behavior came back. What changed at that moment?",
       choices: [
-        ["C1", "Take the job away and give Jordan a warning.", "outEsc"],
-        ["C2", "Remove Jordan from the session.", "outRem"],
-        ["C3", "Send Jordan a private message to check in.", "outCon"]
+        ["D1", "Take the job away and give Jordan a warning.", "outEsc"],
+        ["D2", "Remove Jordan from the session.", "outRem"],
+        ["D3", "Send Jordan a private message to check in.", "outCon"]
       ]
     },
     fbD: {
@@ -248,9 +248,9 @@ const SCENARIOS = [
       chat: [["Jordan", "this is dumb. the reading is SO long"]],
       think: "Jordan just told you something. What might it mean?",
       choices: [
-        ["D1", "“I know, but everyone has to do it. Just try your best.”", "outQuiet"],
-        ["D2", "“Thanks for telling me. Want to read it with a partner, or should I turn on read-aloud?”", "reveal"],
-        ["D3", "“Let's talk after class. For now, please go back to your group.”", "outQuiet"]
+        ["C1", "“Thanks for telling me. Want to read it with a partner, or should I turn on read-aloud?”", "reveal"],
+        ["C2", "“I know, but everyone has to do it. Just try your best.”", "outQuiet"],
+        ["C3", "“Let's talk after class. For now, please go back to your group.”", "outQuiet"]
       ]
     },
     outRem: {
@@ -297,10 +297,10 @@ const SCENARIOS = [
     ["found", "Avery got a positive spotlight", "Attention for contributing instead of disrupting"]
   ],
   firstNotes: {
-    A: "Muting moved the behavior into chat, where classmates kept the show going.",
+    A: "A role gave Avery attention for something useful. That fits what Avery needed.",
     B: "Correcting Avery in front of everyone gave Avery the spotlight they were after.",
     C: "Ignoring works when a student wants your attention. Avery wanted classmates' attention, and they kept giving it.",
-    D: "A role gave Avery attention for something useful. That fits what Avery needed."
+    D: "Muting moved the behavior into chat, where classmates kept the show going."
   },
   tiles: [
     ["Prevent", [
@@ -336,10 +336,10 @@ const SCENARIOS = [
       chat: [["Avery · mic", "Wait wait wait. Plot twist: nobody actually read it."], ["Chat", "😂😂😂"], ["Marcus", "LMAO avery"]],
       after: ["Kayla stops talking. You've already reminded the class: “Please raise your hand and wait to be called on.” There are ten minutes left in the discussion."],
       choices: [
-        ["A", "Mute Avery and keep the discussion going.", "fbA"],
+        ["A", "Give Avery a role: “Avery, I need a discussion leader. Can you call on the next three people with raised hands?”", "fbD"],
         ["B", "Say to the class: “Avery, that's the third time. Mute yourself and let Kayla finish.”", "fbB"],
         ["C", "Ignore it. Thank Kayla, and praise students who are raising their hands.", "fbC"],
-        ["D", "Give Avery a role: “Avery, I need a discussion leader. Can you call on the next three people with raised hands?”", "fbD"]
+        ["D", "Mute Avery and keep the discussion going.", "fbA"]
       ]
     },
     fbA: {
@@ -350,9 +350,9 @@ const SCENARIOS = [
       after: ["Half the class is now watching the chat instead of the discussion."],
       think: "Muting moved the behavior. Where did it go, and who is keeping it going?",
       choices: [
-        ["A1", "Turn off chat for the whole class.", "outEsc"],
-        ["A2", "Move Avery to the lobby.", "outRem"],
-        ["A3", "Send Avery a private message: “I'd like to hear your ideas. Want to share the next answer?”", "outCon"]
+        ["D1", "Turn off chat for the whole class.", "outEsc"],
+        ["D2", "Move Avery to the lobby.", "outRem"],
+        ["D3", "Send Avery a private message: “I'd like to hear your ideas. Want to share the next answer?”", "outCon"]
       ]
     },
     fbB: {
@@ -389,9 +389,9 @@ const SCENARIOS = [
       after: ["Classmates laugh, but they're also answering. Then, after Kayla shares, Avery adds: “Ehh, that answer was kind of mid.”"],
       think: "The role is mostly working. What does Avery need from you right now?",
       choices: [
-        ["D1", "Take the role back: “If you can't be respectful, I'll call on people myself.”", "outEsc"],
-        ["D2", "Private message: “You're a great discussion leader. Keep the energy, but no jokes about anyone's answers. Deal?”", "reveal"],
-        ["D3", "Let it go. The discussion is finally moving.", "outQuiet"]
+        ["A1", "Take the role back: “If you can't be respectful, I'll call on people myself.”", "outEsc"],
+        ["A2", "Let it go. The discussion is finally moving.", "outQuiet"],
+        ["A3", "Private message: “You're a great discussion leader. Keep the energy, but no jokes about anyone's answers. Deal?”", "reveal"]
       ]
     },
     outRem: {
@@ -581,9 +581,9 @@ const SCENARIOS = [
   ],
   firstNotes: {
     A: "Removing Cameron may have been the right call. What mattered next was whether anyone talked with Cameron before they came back.",
-    B: "Asking for a public apology put Cameron on the spot again, right when they were trying to escape it.",
+    B: "You set a limit, stayed calm, and gave Cameron a way out of the spotlight. That bought time for a real conversation.",
     C: "Not reacting avoided a power struggle, but the class needed to hear that the language wasn't okay.",
-    D: "You set a limit, stayed calm, and gave Cameron a way out of the spotlight. That bought time for a real conversation."
+    D: "Asking for a public apology put Cameron on the spot again, right when they were trying to escape it."
   },
   tiles: [
     ["In the moment", [
@@ -625,9 +625,9 @@ const SCENARIOS = [
       after: ["The whole class heard it. Everyone is waiting to see what you'll do."],
       choices: [
         ["A", "“You do not talk to me like that.” Remove Cameron from the session.", "fbA"],
-        ["B", "Say: “That language is not okay. Apologize to the class right now.”", "fbB"],
+        ["B", "Mute Cameron and keep the class going. Then send a private message: “That's not okay, and I can tell something's going on. Take five minutes in the quiet zone, and I'll check in.”", "fbD"],
         ["C", "Don't react. Keep teaching, and deal with it after class.", "fbC"],
-        ["D", "Mute Cameron and keep the class going. Then send a private message: “That's not okay, and I can tell something's going on. Take five minutes in the quiet zone, and I'll check in.”", "fbD"]
+        ["D", "Say: “That language is not okay. Apologize to the class right now.”", "fbB"]
       ]
     },
     fbA: {
@@ -649,9 +649,9 @@ const SCENARIOS = [
       after: ["Now the whole class is watching the two of you."],
       think: "What would an apology in front of the class mean to Cameron right now? What's at stake for Cameron in front of classmates?",
       choices: [
-        ["B1", "“Then you're done for today.” Remove Cameron and write a referral.", "outRem"],
-        ["B2", "Keep insisting. Cameron needs to apologize before class continues.", "outEsc"],
-        ["B3", "Say calmly, “We'll talk later,” and go back to teaching.", "outCon"]
+        ["D1", "“Then you're done for today.” Remove Cameron and write a referral.", "outRem"],
+        ["D2", "Keep insisting. Cameron needs to apologize before class continues.", "outEsc"],
+        ["D3", "Say calmly, “We'll talk later,” and go back to teaching.", "outCon"]
       ]
     },
     fbC: {
@@ -674,9 +674,9 @@ const SCENARIOS = [
       chat: [["Cameron", "whatever. im not apologizing"]],
       think: "Cameron is still upset, but the moment didn't grow. What does Cameron need before you talk about what happened?",
       choices: [
-        ["D1", "“Then you're done for today, and I'm writing you up.”", "outRem"],
-        ["D2", "“You don't have to apologize right now. Let's talk tomorrow before class about what happened and how to make it right.”", "reveal"],
-        ["D3", "Let Cameron stay in the quiet zone for the rest of class and leave it there.", "outQuiet"]
+        ["B1", "“Then you're done for today, and I'm writing you up.”", "outRem"],
+        ["B2", "Let Cameron stay in the quiet zone for the rest of class and leave it there.", "outQuiet"],
+        ["B3", "“You don't have to apologize right now. Let's talk tomorrow before class about what happened and how to make it right.”", "reveal"]
       ]
     },
     outRem: {
@@ -725,8 +725,8 @@ const SCENARIOS = [
   firstNotes: {
     A: "The ultimatum got Riley back for a minute, but the room was still too much.",
     B: "Riley's family got Riley back online, but Riley came back upset and still overloaded.",
-    C: "Leaving Riley alone avoided a fight, but Riley missed the learning and the group lost a member.",
-    D: "Offering a break with a plan to come back helped you find out what was really going on."
+    C: "Offering a break with a plan to come back helped you find out what was really going on.",
+    D: "Leaving Riley alone avoided a fight, but Riley missed the learning and the group lost a member."
   },
   tiles: [
     ["Prevent", [
@@ -765,8 +765,8 @@ const SCENARIOS = [
       choices: [
         ["A", "“Riley, this is a required activity. Put your headset back on and rejoin your group now, or it's a zero for today.”", "fbA"],
         ["B", "Text Riley's parent: “Riley took off their headset and is refusing to participate. Can you get them back on?”", "fbB"],
-        ["C", "Pick your battles. Let Riley sit this one out and keep the tour going.", "fbC"],
-        ["D", "Message Riley privately: “Looks like a lot is going on in there. Want a 3-minute headset break, then join from the quiet room?”", "fbD"]
+        ["C", "Message Riley privately: “Looks like a lot is going on in there. Want a 3-minute headset break, then join from the quiet room?”", "fbD"],
+        ["D", "Pick your battles. Let Riley sit this one out and keep the tour going.", "fbC"]
       ]
     },
     fbA: {
@@ -803,9 +803,9 @@ const SCENARIOS = [
       after: ["The same thing happens the next two times your class goes into VR."],
       think: "Leaving Riley alone avoided a conflict. What is Riley missing, and what is the group learning about Riley?",
       choices: [
-        ["C1", "Give Riley a worksheet to do instead of VR from now on.", "outQuiet"],
-        ["C2", "Tell Riley's group they need to include Riley next time.", "outEsc"],
-        ["C3", "Message Riley after class: “I noticed VR has been hard. Can you tell me what it's like in there for you?”", "outCon"]
+        ["D1", "Give Riley a worksheet to do instead of VR from now on.", "outQuiet"],
+        ["D2", "Tell Riley's group they need to include Riley next time.", "outEsc"],
+        ["D3", "Message Riley after class: “I noticed VR has been hard. Can you tell me what it's like in there for you?”", "outCon"]
       ]
     },
     fbD: {
@@ -815,9 +815,9 @@ const SCENARIOS = [
       chat: [["Riley", "ok. its so loud in there. everyone talks at once and the music"]],
       think: "Riley just told you what's going on. Was this defiance?",
       choices: [
-        ["D1", "“Thanks for telling me. Now put your headset back on and rejoin your group.”", "outQuiet"],
-        ["D2", "“Thanks for telling me. Let's turn down the exhibit audio, and you can join your group from the quieter gallery next door.”", "reveal"],
-        ["D3", "“Okay. You can skip VR today and do the worksheet from the slides.”", "outQuiet"]
+        ["C1", "“Thanks for telling me. Let's turn down the exhibit audio, and you can join your group from the quieter gallery next door.”", "reveal"],
+        ["C2", "“Thanks for telling me. Now put your headset back on and rejoin your group.”", "outQuiet"],
+        ["C3", "“Okay. You can skip VR today and do the worksheet from the slides.”", "outQuiet"]
       ]
     },
     outRem: {
